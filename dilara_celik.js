@@ -1,7 +1,11 @@
-const MAINPAGE = "https://www.e-bebek.com/"
 const PRODUCT_URL = "https://gist.githubusercontent.com/sevindi/8bcbde9f02c1d4abe112809c974e1f49/raw/9bf93b58df623a9b16f1db721cd0a7a539296cf0/products.json"
 
 async function carouselSection() {
+
+    if(window.location.pathname !== '/') {
+        console.log('Wrong Page!');
+        return;
+    }
 
     const productBannerCarousel = document.querySelector("eb-product-carousel")
     const customProductCarousel = document.querySelector(".custom-product-carousel")
