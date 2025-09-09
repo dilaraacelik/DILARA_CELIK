@@ -6,7 +6,7 @@ async function carouselSection() {
         console.log('Wrong Page!');
         return;
     }
-
+    
     const productBannerCarousel = document.querySelector("eb-product-carousel")
     const customProductCarousel = document.querySelector(".custom-product-carousel")
 
@@ -17,13 +17,24 @@ async function carouselSection() {
 
     const eBebekProducts = await fetchProducts()
     productCarousel.innerHTML = buildHTML(eBebekProducts)
-
+    
     productBannerCarousel.before(productCarousel)
-
+    addFavourite()
 }
 
 function addFavourite(){
+    const favBtns = document.querySelectorAll(".add-to-wishlist")
 
+    favBtns.forEach(favBtn => {
+        favBtn.addEventListener("click", function () {
+            const outline = favBtn.querySelector(".toys-icon");
+            outline.classList.toggle("toys-icon-heart-orange-filled");
+
+
+        })
+    })
+
+    
 }
 
 async function fetchProducts() {
@@ -279,7 +290,7 @@ const buildCSS = () => {
             min-width: 275.5px;
         }
     }
-     /* Responsive Media Queries */
+
     @media (max-width: 1280px) {
         .product-list-wrapper .product-wrapper {
             min-width: 299.333px;
