@@ -25,12 +25,32 @@ async function carouselSection() {
 function addFavourite(){
     const favBtns = document.querySelectorAll(".add-to-wishlist")
 
+    let favourites = JSON.parse(localStorage.getItem('favourites')) || []
+
     favBtns.forEach(favBtn => {
+        const productId = favBtn.dataset.productId
+
+        if(favourites.includes(productId)) {
+            const icon = favBtn.querySelector(".toys-icon")
+            if(icon) {
+                icon.classList.add("toys-icon-heart-orange-filled")
+            }
+        }
+        
         favBtn.addEventListener("click", function () {
-            const outline = favBtn.querySelector(".toys-icon");
-            outline.classList.toggle("toys-icon-heart-orange-filled");
+            const icon = favBtn.querySelector(".toys-icon")
+            icon.classList.toggle("toys-icon-heart-orange-filled")
 
-
+            if (icon.classList.contains("toys-icon-heart-orange-filled")) {
+                if (!favourites.includes(productId)) {
+                    favourites.push(productId)
+                }
+            } else {
+                favourites = favourites.filter(id => id !== productId)
+            }
+            
+            localStorage.setItem("favourites", JSON.stringify(favourites))
+            console.log(favBtn)
         })
     })
 
@@ -96,7 +116,7 @@ const buildHTML = (eBebekProducts) => {
                                         </div>
                                     </a>
                                 </div>
-                                <div class="add-to-wishlist">
+                                <div class="add-to-wishlist" data-product-id="${product.id}">
                                     <div class="heart">
                                         <div class="icon-wrapper">
                                             <i class="toys-icon toys-icon-heart-outline"></i>
