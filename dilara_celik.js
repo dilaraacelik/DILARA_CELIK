@@ -1,12 +1,18 @@
 const PRODUCT_URL = "https://gist.githubusercontent.com/sevindi/8bcbde9f02c1d4abe112809c974e1f49/raw/9bf93b58df623a9b16f1db721cd0a7a539296cf0/products.json"
 
-async function carouselSection() {
+async function init() {
 
     if(window.location.pathname !== '/') {
         console.log('Wrong Page!');
         return;
     }
-    
+    buildCSS()
+    await createCustomProductCarousel()
+    addFavourite()
+    addCarouselNavigation()
+}
+
+async function createCustomProductCarousel(){
     const productBannerCarousel = document.querySelector("eb-product-carousel")
     const customProductCarousel = document.querySelector(".custom-product-carousel")
 
@@ -15,11 +21,11 @@ async function carouselSection() {
     const productCarousel = document.createElement('div')
     productCarousel.classList.add('custom-product-carousel')
 
+    
     const eBebekProducts = await fetchProducts()
     productCarousel.innerHTML = buildHTML(eBebekProducts)
     
     productBannerCarousel.before(productCarousel)
-    addFavourite()
 }
 
 function addFavourite(){
@@ -50,21 +56,51 @@ function addFavourite(){
             }
             
             localStorage.setItem("favourites", JSON.stringify(favourites))
-            console.log(favBtn)
+        })
+    }) 
+}
+
+function addCarouselNavigation() {
+    const productList = document.querySelector('.custom-product-carousel .product-list')
+    const prevBtn = document.querySelector('.custom-product-carousel .swiper-prev')
+    const nextBtn = document.querySelector('.custom-product-carousel .swiper-next')
+    
+    if (!productList || !prevBtn || !nextBtn) return
+    
+    const getScrollAmount = () => {
+        const productWrapper = productList.querySelector('.product-wrapper')
+        if (!productWrapper) return 300
+        
+        const computedStyle = window.getComputedStyle(productWrapper)
+        const width = productWrapper.offsetWidth
+        const marginRight = parseInt(computedStyle.marginRight) || 0
+        return width + marginRight
+    }
+    
+    prevBtn.addEventListener("click", () => {
+        const scrollAmount = getScrollAmount()
+        productList.scrollBy({
+            left: -scrollAmount * 1,
+            behavior: 'smooth'
         })
     })
-
+    
+    nextBtn.addEventListener("click", () => {
+        const scrollAmount = getScrollAmount()
+        productList.scrollBy({
+            left: scrollAmount * 1,
+            behavior: 'smooth'
+        })
+    })
     
 }
 
 async function fetchProducts() {
     let eBebekProducts = localStorage.getItem("e_bebek_products")
     if (eBebekProducts) {
-        console.log("localdeyim")
         return JSON.parse(eBebekProducts)
     }
 
-    console.log("deneyelim")
     try {
         const res = await fetch(PRODUCT_URL)
         const data = await res.json()
@@ -106,12 +142,27 @@ const buildHTML = (eBebekProducts) => {
                                         </div>
                                         <div class="product-price-wrapper">
                                             <div class="product-price">
-                                                <span>
-                                                    ${(product.price).toString().split(".")[0]}
-                                                    <span>
-                                                        ,${(product.price).toString().split(".")[1]} TL
-                                                    </span>
-                                                </span>
+                                                ${product.original_price === product.price || product.price>product.original_price ?
+                                                    `
+                                                    <div class="real-price">
+                                                        <span class="prev-price">${(product.original_price).toString().split(".")[0]}<span class="price-decimal">,${(product.original_price).toString().split(".")[1]} TL</span>
+                                                        </span>
+                                                    </div>
+                                                    ` : `
+                                                        <div class="real-price">
+                                                            <span class="prev-price">
+                                                                ${(product.original_price).toString().split(".")[0]}<span>,${(product.original_price).toString().split(".")[1]} TL</span>
+                                                            </span>
+                                                            <span class="discount-ratio">%${Math.round(((product.original_price - product.price) / product.original_price) * 100)}</span>
+                                                        </div>
+                                                        <div class="sale-price">
+                                                            <strong class="new-price">
+                                                                ${(product.price).toString().split(".")[0]}<span class="price-decimal">,${(product.price).toString().split(".")[1]} TL</span>
+                                                            </strong>
+                                                        </div>
+                                                    `
+                                                }
+                                                
                                             </div>
                                         </div>
                                     </a>
@@ -153,7 +204,7 @@ const buildHTML = (eBebekProducts) => {
 const buildCSS = () => {
     const css = 
     `
-   .Section2A custom-product-crausel {
+    .custom-product-carousel {
         padding-bottom: 50px;
     }
 
@@ -173,9 +224,6 @@ const buildCSS = () => {
 
     .custom-banner-products {
         box-shadow: none;
-    }
-
-    .custom-banner-products {
         position: relative;
         background-color: #fff;
     }
@@ -229,10 +277,10 @@ const buildCSS = () => {
         -webkit-tap-highlight-color: transparent;
         min-width: 245.2px;
         margin-right: 16px;
+        height: 385.09px
     }
     .product-itself {
         z-index: 1;
-        display: block;
         width: 100%;
         font-family: Quicksand-Medium;
         font-size: 12px;
@@ -250,18 +298,21 @@ const buildCSS = () => {
         justify-content: space-between;
     }
     
+    .product-wrapper a{
+        height: 100%
+    }
+
     .product-itself:focus, .product-itself:hover {
         color: unset;
         outline: none;
-        border:1px solid var(--Neutral-500,#c1ccd4)
+        border:1px solid var(--Neutral-500,#c1ccd4);
     }
     
     .product-itself:active {
-        border:1px solid var(--Neutral-500,#c1ccd4)
+        border:1px solid var(--Neutral-500,#c1ccd4);
     }
     .product-name-info {
-        padding-bottom: 13px;
-        padding: 0 10px;
+        padding: 0 10px 13px;
     }
     .product-name{
         font-size: 12px;
@@ -274,18 +325,48 @@ const buildCSS = () => {
         margin-bottom: 10px;
     }
     .product-price-wrapper {
-        position: relative;
-        display: flex;
-        justify-content: flex-end;
-        flex-direction: column;
+        position: absolute;
+        bottom: 2px;
+        left: 2px;
         padding: 6px 10px 15px;
+    }
+    .product-price .real-price {
+        display: flex;
+        align-items: center;
     }
     .product-price {
         font-family: Quicksand-SemiBold;
         display: flex;
-        align-items: center;
+        flex-direction: column
+    }
+    .product-price span.price-decimal{
+        font-size: 14px
+    }
+    .product-price .real-price .prev-price {
+        font-size: 20px;
+        color: var(--Primary-Black);
+        margin-right: 8px;
+        line-height: normal;
+    }
+    
+    .product-price:has(.sale-price) .real-price .prev-price {
         font-size: 12px;
         color: var(--Neutral-600);
+    }
+
+    .product-price .real-price .discount-ratio {
+        background-color: var(--Success-400);
+        color: var(--Neutral-0---White);
+        border-radius: 16px;
+        padding: 0 4px;
+        font-size: 12px;
+    }
+
+    .product-price .sale-price {
+        font-weight: 700;
+        font-size: 20px;
+        line-height: 20px;
+        color: var(--Success-400);
     }
     .product-media {
         position: relative;
@@ -333,5 +414,4 @@ const buildCSS = () => {
     style.textContent = css;
     document.head.appendChild(style);
 }
-buildCSS()
-carouselSection()
+init()
